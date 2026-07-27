@@ -1,7 +1,11 @@
 import argparse
 import asyncio
 
+
 from checker import check_server
+from version import __version__
+
+print(f"SSH Server Check v{__version__}")
 
 
 def main():
