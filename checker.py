@@ -1,5 +1,6 @@
 from rich.console import Console
 from rich.table import Table
+from exporter import export_json
 
 from ssh_client import connect, run_command
 
@@ -31,8 +32,32 @@ async def check_server(host: str, username: str, password: str):
             disk_usage = await run_command(conn, "df -h / | awk 'NR==2 {print $5}'")
             ram_usage = await run_command(conn, "free | awk '/Mem:/ {printf(\"%.0f%%\", $3/$2*100)}'")
             public_ip = await run_command(conn, "curl -s https://api.ipify.org")
+            architecture = await run_command(conn, "uname -m")
+            virtualization = await run_command(conn, "systemd-detect-virt || echo none")
+            logged_users = await run_command(conn, "who | wc -l")
+            report = {
+    "hostname": hostname,
+    "public_ip": public_ip,
+    "os": os_name.replace('"', ""),
+    "kernel": kernel,
+    "cpu_cores": cpu,
+    "cpu_load": load,
+    "ram_total": ram,
+    "ram_usage": ram_usage,
+    "disk_total": disk,
+    "disk_usage": disk_usage,
+    "uptime": uptime,
+    "python": python_version,
+    "architecture": architecture,
+    "virtualization": virtualization,
+    "logged_users": logged_users,
+    "server_time": server_time,
+}
             table.add_row("Public IP", public_ip)
             table.add_row("Python", python_version)
+            table.add_row("Architecture", architecture)
+            table.add_row("Virtualization", virtualization)
+            table.add_row("Logged Users", logged_users)
             table.add_row("CPU Load", load)
             table.add_row("RAM Usage", ram_usage)
             table.add_row("Disk Usage", disk_usage)
@@ -45,7 +70,7 @@ async def check_server(host: str, username: str, password: str):
             table.add_row("RAM", ram)
             table.add_row("Disk", disk)
             table.add_row("Uptime", uptime)
-
+            export_json(report)
             console.print(table)
 
     except Exception as e:
